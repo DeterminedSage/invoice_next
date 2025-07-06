@@ -35,15 +35,15 @@ export const signUp = async (data: {
       status: response.status,
       data: response.data,
     };
-  } catch (error) {
+  } catch (error: any) {
     console.error("❌ Sign-up API error:", error);
-    console.error("📊 Error response:", error.response?.data);
-    console.error("📊 Error status:", error.response?.status);
-    console.error("📊 Error message:", error.message);
+    console.error("📊 Error response:", error?.response?.data);
+    console.error("📊 Error status:", error?.response?.status);
+    console.error("📊 Error message:", error?.message);
     
     return {
-      status: error.response?.status || 500,
-      data: error.response?.data || { message: error.message || "Unknown error" },
+      status: error?.response?.status || 500,
+      data: error?.response?.data || { message: error?.message || "Unknown error" },
     };
   }
 };
