@@ -39,40 +39,22 @@ const Home = () => {
         addressLine2: string;
       };
     }[]
-  >([
-    {
-      total: 0,
-      invoice_number: "",
-      invoice_date: "",
-      owner: "",
-      template: "",
-      descriptions: [
-        {
-          description: "",
-          price: 0,
-        },
-      ],
-      bill_from: {
-        name: "",
-        email: "",
-        addressLine1: "",
-        addressLine2: "",
-      },
-      bill_to: {
-        name: "",
-        email: "",
-        addressLine1: "",
-        addressLine2: "",
-      },
-    },
-  ]);
+  >([]);
 
   useEffect(() => {
     console.log(token);
     if (token !== "") {
       getAllInvoices(token).then((res) => {
-        setInvoices(res.data);
-        console.log(res.data);
+        console.log("API Response:", res);
+        if (res && res.data && Array.isArray(res.data)) {
+          setInvoices(res.data);
+        } else {
+          console.error("Invalid response structure:", res);
+          setInvoices([]);
+        }
+      }).catch((error) => {
+        console.error("Error fetching invoices:", error);
+        setInvoices([]);
       });
     }
   }, [token]);
@@ -89,19 +71,27 @@ const Home = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices.map((invoice) => (
-            <TableRow
-              key={invoice.invoice_number}
-              onClick={() => {
-                window.open(`/invoice?q=${invoice.invoice_number}`, "_blank");
-              }}
-            >
-              <TableCell>{invoice.invoice_number}</TableCell>
-              <TableCell>{invoice.bill_to.name}</TableCell>
-              <TableCell>{invoice.bill_to.email}</TableCell>
-              <TableCell className="text-right">${invoice.total}</TableCell>
+          {invoices && invoices.length > 0 ? (
+            invoices.map((invoice) => (
+              <TableRow
+                key={invoice.invoice_number}
+                onClick={() => {
+                  window.open(`/invoice?q=${invoice.invoice_number}`, "_blank");
+                }}
+              >
+                <TableCell>{invoice.invoice_number}</TableCell>
+                <TableCell>{invoice.bill_to.name}</TableCell>
+                <TableCell>{invoice.bill_to.email}</TableCell>
+                <TableCell className="text-right">${invoice.total}</TableCell>
+              </TableRow>
+            ))
+          ) : (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center">
+                No invoices found
+              </TableCell>
             </TableRow>
-          ))}
+          )}
         </TableBody>
       </Table>
     </div>

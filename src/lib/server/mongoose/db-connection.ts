@@ -1,10 +1,11 @@
-import mngoose from "mongoose";
+import mongoose from "mongoose";
 
 const dbConnection = async () => {
   const uri: string =
-    process.env.MONGODB_URI || "mongodb://localhost:27017/test";
+    process.env.MONGO_URI || "mongodb://localhost:27017/test";
   try {
-    await mngoose.connect(uri);
+    await mongoose.connect(uri);
+    console.log(uri);
     console.log("Connected to database");
   } catch (error) {
     console.log("Error connecting to database", error);

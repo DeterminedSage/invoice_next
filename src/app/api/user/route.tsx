@@ -8,10 +8,109 @@ import sendEmail from "@/lib/send-email";
 import generateToken from "@/lib/utility/generate-tokens";
 import { decodeToken } from "@/lib/utility/decode-token";
 
+// export async function POST(req: Request) {
+//   const data = await req.json();
+//   const { name, email, password } = data;
+//   if (!name || !email || !password) {
+//     return NextResponse.json({
+//       status: 400,
+//       body: {
+//         success: false,
+//         message: "Please provide all the required fields",
+//       },
+//     });
+//   }
+
+//   try {
+//     await dbConnection();
+
+//     const existingUser = await User.findOne({ email });
+//     if (existingUser) {
+//       return NextResponse.json({
+//         status: 400,
+//         body: {
+//           success: false,
+//           message: "User already exists",
+//         },
+//       });
+//     }
+
+//     const verification_otp: number = Math.floor(
+//       100000 + Math.random() * 900000
+//     );
+
+//     const salt = await bcrypt.genSalt(10);
+//     const hashedPassword = await bcrypt.hash(password, salt);
+
+//     const user = new User({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       verification_otp,
+//     });
+
+//     const emailTemplate = otpVerificationTemplate(verification_otp, name);
+
+//     const sendEmailResponse = await sendEmail(
+//       email,
+//       "Email Verification",
+//       emailTemplate
+//     );
+
+//     if (!sendEmailResponse.success) {
+//       return NextResponse.json({
+//         status: 500,
+//         body: {
+//           success: false,
+//           message: "Error sending email",
+//         },
+//       });
+//     }
+
+//     const newUser = await user.save();
+
+//     const token: string = generateToken(newUser._id) || " ";
+
+//     newUser.tokens = newUser.tokens.concat({ token });
+
+//     await newUser.save();
+
+//     const response = NextResponse.json({
+//       status: 200,
+//       body: {
+//         success: true,
+//         message: "User registered successfully",
+//       },
+//     });
+
+//     response.cookies.set("invoice_2k_1r_token", token, {
+//       httpOnly: false,
+//       sameSite: "strict",
+//       secure: true,
+//     });
+
+//     return response;
+//   } catch (error: any) {
+//     return NextResponse.json({
+//       status: 500,
+//       body: {
+//         success: false,
+//         message: error.message,
+//       },
+//     });
+//   }
+// }
+
 export async function POST(req: Request) {
+  console.log("🚀 User registration API called");
+  
   const data = await req.json();
   const { name, email, password } = data;
+  
+  console.log("📋 Request data:", { name, email, password: password ? "***provided***" : "***missing***" });
+  
   if (!name || !email || !password) {
+    console.log("❌ Missing required fields");
     return NextResponse.json({
       status: 400,
       body: {
@@ -22,10 +121,14 @@ export async function POST(req: Request) {
   }
 
   try {
+    console.log("🔌 Connecting to database...");
     await dbConnection();
+    console.log("✅ Database connected");
 
+    console.log("🔍 Checking for existing user...");
     const existingUser = await User.findOne({ email });
     if (existingUser) {
+      console.log("❌ User already exists");
       return NextResponse.json({
         status: 400,
         body: {
@@ -34,13 +137,16 @@ export async function POST(req: Request) {
         },
       });
     }
+    console.log("✅ User doesn't exist, proceeding...");
 
     const verification_otp: number = Math.floor(
       100000 + Math.random() * 900000
     );
+    console.log("🔢 Generated OTP:", verification_otp);
 
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
+    console.log("🔐 Password hashed successfully");
 
     const user = new User({
       name,
@@ -48,32 +154,47 @@ export async function POST(req: Request) {
       password: hashedPassword,
       verification_otp,
     });
+    console.log("👤 User object created");
 
+    console.log("📧 Generating email template...");
     const emailTemplate = otpVerificationTemplate(verification_otp, name);
+    console.log("✅ Email template generated");
 
+    console.log("📤 Sending email...");
+    console.log("📧 Email config check:");
+    console.log("📧 EMAIL_USER:", process.env.EMAIL_USER);
+    console.log("📧 EMAIL_PASS:", process.env.EMAIL_PASS ? "***configured***" : "***missing***");
+    
     const sendEmailResponse = await sendEmail(
       email,
       "Email Verification",
       emailTemplate
     );
+    
+    console.log("📥 Email response:", sendEmailResponse);
 
     if (!sendEmailResponse.success) {
+      console.log("❌ Email sending failed:", sendEmailResponse.message);
       return NextResponse.json({
         status: 500,
         body: {
           success: false,
-          message: "Error sending email",
+          message: "Error sending email: " + sendEmailResponse.message,
         },
       });
     }
+    console.log("✅ Email sent successfully");
 
+    console.log("💾 Saving user to database...");
     const newUser = await user.save();
+    console.log("✅ User saved to database");
 
     const token: string = generateToken(newUser._id) || " ";
+    console.log("🔑 Token generated");
 
     newUser.tokens = newUser.tokens.concat({ token });
-
     await newUser.save();
+    console.log("✅ Token saved to user");
 
     const response = NextResponse.json({
       status: 200,
@@ -89,8 +210,11 @@ export async function POST(req: Request) {
       secure: true,
     });
 
+    console.log("🎉 User registration completed successfully");
     return response;
   } catch (error: any) {
+    console.error("💥 Registration error:", error.message);
+    console.error("🔍 Full error:", error);
     return NextResponse.json({
       status: 500,
       body: {

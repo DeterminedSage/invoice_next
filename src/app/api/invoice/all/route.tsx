@@ -1,5 +1,6 @@
 import sendEmail from "@/lib/send-email";
 import { auth } from "@/lib/server/middleware/auth";
+import dbConnection from "@/lib/server/mongoose/db-connection";
 import Invoice from "@/lib/server/mongoose/models/invoice-model";
 import { invoiceDownloadTemplate } from "@/lib/templates";
 import { NextResponse } from "next/server";
@@ -27,16 +28,17 @@ export async function POST(req: Request) {
 
   const user_id: string = authData.data || "";
 
-  console.log("data => ", data);
-  const invoices = data.map((invoice: any) => {
-    return new Invoice({
-      ...invoice,
-      owner: user_id,
-    });
-  });
-
-
   try {
+    await dbConnection();
+    
+    console.log("data => ", data);
+    const invoices = data.map((invoice: any) => {
+      return new Invoice({
+        ...invoice,
+        owner: user_id,
+      });
+    });
+
     await Invoice.insertMany(invoices);
 
     for (let i = 0; i < invoices.length; i++) {
@@ -99,10 +101,18 @@ export async function GET(req: Request) {
 
   const user_id: string = authData.data || "";
 
-  const invoices = await Invoice.find({ owner: user_id });
+  try {
+    await dbConnection();
+    const invoices = await Invoice.find({ owner: user_id });
 
-  return NextResponse.json({
-    data: invoices,
-    status: 200,
-  });
+    return NextResponse.json({
+      data: invoices,
+      status: 200,
+    });
+  } catch (error) {
+    return NextResponse.json({
+      message: "Error fetching invoices",
+      status: 500,
+    });
+  }
 }
